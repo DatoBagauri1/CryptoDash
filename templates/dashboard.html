@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - CryptoDash{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Dashboard Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-chart-line text-warning me-2"></i>Crypto Dashboard
+            </h1>
+            <p class="text-muted mb-0">Live cryptocurrency prices and market data</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6 class="mb-2">Filter by:</h6>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('dashboard.dashboard', filter='market_cap') }}" 
+                                   class="btn {% if current_filter == 'market_cap' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    Market Cap
+                                </a>
+                                <a href="{{ url_for('dashboard.dashboard', filter='volume') }}" 
+                                   class="btn {% if current_filter == 'volume' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    Volume
+                                </a>
+                                <a href="{{ url_for('dashboard.dashboard', filter='price_change') }}" 
+                                   class="btn {% if current_filter == 'price_change' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    24h Change
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <small class="text-muted">
+                                <i class="fas fa-sync-alt me-1"></i>
+                                Data updates every minute
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cryptocurrency Table -->
+    {% if top_coins %}
+    <div class="card bg-dark border-secondary">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                {% if current_filter == 'market_cap' %}Top Cryptocurrencies by Market Cap
+                {% elif current_filter == 'volume' %}Top Cryptocurrencies by Volume
+                {% elif current_filter == 'price_change' %}Biggest Gainers (24h)
+                {% else %}Top Cryptocurrencies{% endif %}
+            </h5>
+            <span class="badge bg-secondary">{{ top_coins|length }} coins</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Coin</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">1h Change</th>
+                            <th class="text-end">24h Change</th>
+                            <th class="text-end">7d Change</th>
+                            <th class="text-end">Market Cap</th>
+                            <th class="text-end">Volume (24h)</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coin in top_coins %}
+                        <tr>
+                            <td class="fw-medium">{{ coin.market_cap_rank or '-' }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ coin.image }}" alt="{{ coin.name }}" 
+                                         class="rounded-circle me-3" width="32" height="32">
+                                    <div>
+                                        <div class="fw-medium">{{ coin.name }}</div>
+                                        <small class="text-muted">{{ coin.symbol.upper() }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end fw-medium">
+                                {% if coin.current_price %}
+                                ${{ "%.2f" if coin.current_price >= 1 else "%.6f" | format(coin.current_price) }}
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.price_change_percentage_1h_in_currency %}
+                                <span class="badge {% if coin.price_change_percentage_1h_in_currency > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if coin.price_change_percentage_1h_in_currency > 0 %}+{% endif %}{{ "%.2f"|format(coin.price_change_percentage_1h_in_currency) }}%
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.price_change_percentage_24h %}
+                                <span class="badge {% if coin.price_change_percentage_24h > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if coin.price_change_percentage_24h > 0 %}+{% endif %}{{ "%.2f"|format(coin.price_change_percentage_24h) }}%
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.price_change_percentage_7d_in_currency %}
+                                <span class="badge {% if coin.price_change_percentage_7d_in_currency > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if coin.price_change_percentage_7d_in_currency > 0 %}+{% endif %}{{ "%.2f"|format(coin.price_change_percentage_7d_in_currency) }}%
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.market_cap %}
+                                ${{ "{:,.0f}".format(coin.market_cap) }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.total_volume %}
+                                ${{ "{:,.0f}".format(coin.total_volume) }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('charts.charts', coin=coin.id) }}" 
+                                       class="btn btn-outline-info" title="View Chart">
+                                        <i class="fas fa-chart-line"></i>
+                                    </a>
+                                    <a href="{{ url_for('converter.converter') }}" 
+                                       class="btn btn-outline-warning" title="Convert">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-exclamation-triangle fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Unable to load market data</h4>
+        <p class="text-muted">Please check your internet connection and try again.</p>
+        <button class="btn btn-warning" onclick="window.location.reload()">
+            <i class="fas fa-refresh me-2"></i>Retry
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-refresh dashboard data every 2 minutes
+setInterval(function() {
+    window.location.reload();
+}, 120000);
+</script>
+{% endblock %}

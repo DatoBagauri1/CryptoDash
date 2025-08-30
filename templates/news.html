@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto News - CryptoDash{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- News Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-newspaper text-warning me-2"></i>Crypto News
+            </h1>
+            <p class="text-muted mb-0">Latest cryptocurrency news and market updates</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-warning" onclick="window.location.reload()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- News Articles -->
+    {% if news_items %}
+    <div class="row g-4">
+        {% for article in news_items %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body d-flex flex-column">
+                    <!-- News Source and Time -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        {% if article.domain %}
+                        <span class="badge bg-secondary">{{ article.domain }}</span>
+                        {% endif %}
+                        {% if article.published_at %}
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ article.published_at[:10] }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Article Title -->
+                    <h6 class="card-title">
+                        {% if article.url %}
+                        <a href="{{ article.url }}" target="_blank" class="text-white text-decoration-none">
+                            {{ article.title[:100] }}{% if article.title|length > 100 %}...{% endif %}
+                        </a>
+                        {% else %}
+                        {{ article.title[:100] }}{% if article.title|length > 100 %}...{% endif %}
+                        {% endif %}
+                    </h6>
+                    
+                    <!-- Article Summary/Description -->
+                    {% if article.description %}
+                    <p class="card-text text-muted small flex-grow-1">
+                        {{ article.description[:150] }}{% if article.description|length > 150 %}...{% endif %}
+                    </p>
+                    {% endif %}
+                    
+                    <!-- Currencies mentioned -->
+                    {% if article.currencies %}
+                    <div class="mb-3">
+                        {% for currency in article.currencies[:3] %}
+                        <span class="badge bg-warning text-dark me-1">{{ currency.code }}</span>
+                        {% endfor %}
+                        {% if article.currencies|length > 3 %}
+                        <span class="badge bg-secondary">+{{ article.currencies|length - 3 }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Article Actions -->
+                    <div class="mt-auto">
+                        {% if article.url %}
+                        <a href="{{ article.url }}" target="_blank" class="btn btn-outline-warning btn-sm w-100">
+                            <i class="fas fa-external-link-alt me-1"></i>Read Full Article
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Load More News -->
+    <div class="text-center mt-5">
+        <p class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            News updates automatically. Check back regularly for the latest crypto news.
+        </p>
+    </div>
+    
+    {% else %}
+    <!-- No News Available -->
+    <div class="text-center py-5">
+        <i class="fas fa-newspaper fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">No News Available</h4>
+        <p class="text-muted">
+            Unable to load cryptocurrency news at the moment.<br>
+            This might be due to API limitations or connectivity issues.
+        </p>
+        <button class="btn btn-warning" onclick="window.location.reload()">
+            <i class="fas fa-refresh me-2"></i>Try Again
+        </button>
+        
+        <!-- Alternative News Sources -->
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-8 col-lg-6">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h6 class="card-title">Alternative News Sources:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="https://cointelegraph.com" target="_blank" class="btn btn-outline-info btn-sm">
+                                Cointelegraph
+                            </a>
+                            <a href="https://decrypt.co" target="_blank" class="btn btn-outline-info btn-sm">
+                                Decrypt
+                            </a>
+                            <a href="https://coindesk.com" target="_blank" class="btn btn-outline-info btn-sm">
+                                CoinDesk
+                            </a>
+                            <a href="https://cryptonews.com" target="_blank" class="btn btn-outline-info btn-sm">
+                                CryptoNews
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- News Categories & Filters (Future Enhancement) -->
+<div class="container mt-5">
+    <div class="card bg-dark border-secondary">
+        <div class="card-body">
+            <h6 class="card-title text-warning">
+                <i class="fas fa-star me-2"></i>Coming Soon
+            </h6>
+            <p class="text-muted mb-3">Enhanced news features we're working on:</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="list-unstyled text-muted">
+                        <li><i class="fas fa-check me-2 text-success"></i>News categories and filters</li>
+                        <li><i class="fas fa-check me-2 text-success"></i>Personalized news feed</li>
+                        <li><i class="fas fa-check me-2 text-success"></i>Sentiment analysis</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-unstyled text-muted">
+                        <li><i class="fas fa-check me-2 text-success"></i>Price correlation analysis</li>
+                        <li><i class="fas fa-check me-2 text-success"></i>Breaking news alerts</li>
+                        <li><i class="fas fa-check me-2 text-success"></i>Multiple language support</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto Converter - CryptoDash{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Converter Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-exchange-alt text-warning me-2"></i>Crypto Converter
+            </h1>
+            <p class="text-muted mb-0">Convert between cryptocurrencies and fiat currencies</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-warning" onclick="window.location.reload()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh Rates
+            </button>
+        </div>
+    </div>
+
+    <!-- Converter Tool -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header text-center">
+                    <h4 class="mb-0">Currency Converter</h4>
+                    <p class="text-muted mb-0">Real-time conversion rates</p>
+                </div>
+                <div class="card-body">
+                    <form id="converterForm">
+                        <div class="row align-items-end mb-4">
+                            <div class="col-md-5">
+                                <label for="fromAmount" class="form-label">Amount</label>
+                                <input type="number" class="form-control form-control-lg bg-dark border-secondary" 
+                                       id="fromAmount" value="1" min="0" step="0.00000001">
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <button type="button" class="btn btn-outline-warning" id="swapButton" title="Swap currencies">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="toAmount" class="form-label">Converted Amount</label>
+                                <input type="number" class="form-control form-control-lg bg-dark border-secondary" 
+                                       id="toAmount" readonly>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-5">
+                                <label for="fromCurrency" class="form-label">From</label>
+                                <select class="form-select form-select-lg bg-dark border-secondary" id="fromCurrency">
+                                    <option value="bitcoin">Bitcoin (BTC)</option>
+                                    <option value="ethereum">Ethereum (ETH)</option>
+                                    <option value="binancecoin">BNB (BNB)</option>
+                                    <option value="cardano">Cardano (ADA)</option>
+                                    <option value="solana">Solana (SOL)</option>
+                                    <option value="usd" data-fiat="true">US Dollar (USD)</option>
+                                    <option value="eur" data-fiat="true">Euro (EUR)</option>
+                                    <option value="gbp" data-fiat="true">British Pound (GBP)</option>
+                                    <option value="jpy" data-fiat="true">Japanese Yen (JPY)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2"></div>
+                            <div class="col-md-5">
+                                <label for="toCurrency" class="form-label">To</label>
+                                <select class="form-select form-select-lg bg-dark border-secondary" id="toCurrency">
+                                    <option value="bitcoin">Bitcoin (BTC)</option>
+                                    <option value="ethereum">Ethereum (ETH)</option>
+                                    <option value="binancecoin">BNB (BNB)</option>
+                                    <option value="cardano">Cardano (ADA)</option>
+                                    <option value="solana">Solana (SOL)</option>
+                                    <option value="usd" data-fiat="true" selected>US Dollar (USD)</option>
+                                    <option value="eur" data-fiat="true">Euro (EUR)</option>
+                                    <option value="gbp" data-fiat="true">British Pound (GBP)</option>
+                                    <option value="jpy" data-fiat="true">Japanese Yen (JPY)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-warning btn-lg px-5">
+                                <i class="fas fa-calculator me-2"></i>Convert
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conversion Result -->
+    <div class="row justify-content-center mb-5" id="conversionResult" style="display: none;">
+        <div class="col-lg-8">
+            <div class="card bg-dark border-success">
+                <div class="card-body text-center">
+                    <h4 class="text-success mb-3">Conversion Result</h4>
+                    <div class="row align-items-center">
+                        <div class="col-md-5">
+                            <h3 class="text-warning" id="fromDisplay">1 BTC</h3>
+                        </div>
+                        <div class="col-md-2">
+                            <i class="fas fa-equals fa-2x text-muted"></i>
+                        </div>
+                        <div class="col-md-5">
+                            <h3 class="text-success" id="toDisplay">$50,000</h3>
+                        </div>
+                    </div>
+                    <p class="text-muted mt-3 mb-0">
+                        <i class="fas fa-clock me-1"></i>
+                        <span id="conversionTime">Last updated: Now</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Exchange Rates -->
+    {% if exchange_rates %}
+    <div class="row mb-4">
+        <div class="col">
+            <h4 class="mb-3">
+                <i class="fas fa-chart-bar text-info me-2"></i>Current Exchange Rates
+            </h4>
+            <div class="row g-3">
+                {% for crypto, rates in exchange_rates.items() %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-body">
+                            <h6 class="card-title text-warning">{{ crypto.replace('-', ' ').title() }}</h6>
+                            <div class="row g-2">
+                                {% for currency, rate in rates.items() %}
+                                {% if currency in ['usd', 'eur', 'gbp', 'jpy'] %}
+                                <div class="col-6">
+                                    <div class="text-center p-2 bg-secondary rounded">
+                                        <small class="text-muted d-block">{{ currency.upper() }}</small>
+                                        <strong>
+                                            {% if currency == 'jpy' %}
+                                                ¥{{ "{:,.0f}".format(rate) }}
+                                            {% elif currency == 'eur' %}
+                                                €{{ "{:,.2f}".format(rate) }}
+                                            {% elif currency == 'gbp' %}
+                                                £{{ "{:,.2f}".format(rate) }}
+                                            {% else %}
+                                                ${{ "{:,.2f}".format(rate) }}
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Popular Conversions -->
+    <div class="row mb-4">
+        <div class="col">
+            <h4 class="mb-3">
+                <i class="fas fa-star text-warning me-2"></i>Popular Conversions
+            </h4>
+            <div class="row g-3">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-body text-center">
+                            <h6 class="text-warning">1 BTC to USD</h6>
+                            <p class="text-muted mb-2">Bitcoin to US Dollar</p>
+                            <button class="btn btn-outline-warning btn-sm" 
+                                    onclick="setConversion('bitcoin', 'usd', 1)">
+                                Convert
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-body text-center">
+                            <h6 class="text-warning">1 ETH to USD</h6>
+                            <p class="text-muted mb-2">Ethereum to US Dollar</p>
+                            <button class="btn btn-outline-warning btn-sm" 
+                                    onclick="setConversion('ethereum', 'usd', 1)">
+                                Convert
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-body text-center">
+                            <h6 class="text-warning">1000 USD to BTC</h6>
+                            <p class="text-muted mb-2">US Dollar to Bitcoin</p>
+                            <button class="btn btn-outline-warning btn-sm" 
+                                    onclick="setConversion('usd', 'bitcoin', 1000)">
+                                Convert
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-body text-center">
+                            <h6 class="text-warning">1 BTC to ETH</h6>
+                            <p class="text-muted mb-2">Bitcoin to Ethereum</p>
+                            <button class="btn btn-outline-warning btn-sm" 
+                                    onclick="setConversion('bitcoin', 'ethereum', 1)">
+                                Convert
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Converter Features -->
+    <div class="row">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <h6 class="card-title text-warning">
+                        <i class="fas fa-info-circle me-2"></i>Converter Features
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled text-muted">
+                                <li><i class="fas fa-check me-2 text-success"></i>Real-time exchange rates</li>
+                                <li><i class="fas fa-check me-2 text-success"></i>Crypto to crypto conversion</li>
+                                <li><i class="fas fa-check me-2 text-success"></i>Crypto to fiat conversion</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled text-muted">
+                                <li><i class="fas fa-check me-2 text-success"></i>Multiple fiat currencies</li>
+                                <li><i class="fas fa-check me-2 text-success"></i>Precision calculations</li>
+                                <li><i class="fas fa-check me-2 text-success"></i>Popular conversion shortcuts</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Store current exchange rates
+let currentRates = {};
+
+// Initialize converter
+document.addEventListener('DOMContentLoaded', function() {
+    loadExchangeRates();
+    
+    // Auto-convert on amount change
+    document.getElementById('fromAmount').addEventListener('input', performConversion);
+    document.getElementById('fromCurrency').addEventListener('change', performConversion);
+    document.getElementById('toCurrency').addEventListener('change', performConversion);
+    
+    // Swap currencies
+    document.getElementById('swapButton').addEventListener('click', swapCurrencies);
+    
+    // Form submit
+    document.getElementById('converterForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        performConversion();
+    });
+});
+
+// Load current exchange rates
+function loadExchangeRates() {
+    // Use the rates provided by the template or fetch fresh ones
+    {% if exchange_rates %}
+    currentRates = {{ exchange_rates | tojson }};
+    {% endif %}
+}
+
+// Perform currency conversion
+function performConversion() {
+    const fromAmount = parseFloat(document.getElementById('fromAmount').value) || 0;
+    const fromCurrency = document.getElementById('fromCurrency').value;
+    const toCurrency = document.getElementById('toCurrency').value;
+    
+    if (fromAmount === 0) {
+        document.getElementById('toAmount').value = '0';
+        return;
+    }
+    
+    // Same currency
+    if (fromCurrency === toCurrency) {
+        document.getElementById('toAmount').value = fromAmount;
+        showResult(fromAmount, fromCurrency, fromAmount, toCurrency);
+        return;
+    }
+    
+    // Get conversion rate
+    let conversionRate = getConversionRate(fromCurrency, toCurrency);
+    
+    if (conversionRate !== null) {
+        const convertedAmount = fromAmount * conversionRate;
+        document.getElementById('toAmount').value = convertedAmount.toFixed(8);
+        showResult(fromAmount, fromCurrency, convertedAmount, toCurrency);
+    } else {
+        document.getElementById('toAmount').value = 'Error';
+        alert('Unable to get conversion rate. Please try again.');
+    }
+}
+
+// Get conversion rate between two currencies
+function getConversionRate(from, to) {
+    // Check if we have direct rate
+    if (currentRates[from] && currentRates[from][to]) {
+        return currentRates[from][to];
+    }
+    
+    // Check reverse rate
+    if (currentRates[to] && currentRates[to][from]) {
+        return 1 / currentRates[to][from];
+    }
+    
+    // Convert through USD if available
+    if (from !== 'usd' && to !== 'usd') {
+        const fromToUsd = getConversionRate(from, 'usd');
+        const usdToTo = getConversionRate('usd', to);
+        
+        if (fromToUsd !== null && usdToTo !== null) {
+            return fromToUsd * usdToTo;
+        }
+    }
+    
+    return null;
+}
+
+// Show conversion result
+function showResult(fromAmount, fromCurrency, toAmount, toCurrency) {
+    const fromSymbol = getCurrencySymbol(fromCurrency);
+    const toSymbol = getCurrencySymbol(toCurrency);
+    
+    document.getElementById('fromDisplay').textContent = 
+        formatAmount(fromAmount) + ' ' + fromSymbol;
+    document.getElementById('toDisplay').textContent = 
+        formatAmount(toAmount) + ' ' + toSymbol;
+    document.getElementById('conversionTime').textContent = 
+        'Last updated: ' + new Date().toLocaleTimeString();
+    
+    document.getElementById('conversionResult').style.display = 'block';
+}
+
+// Get currency symbol
+function getCurrencySymbol(currency) {
+    const symbols = {
+        'bitcoin': 'BTC',
+        'ethereum': 'ETH',
+        'binancecoin': 'BNB',
+        'cardano': 'ADA',
+        'solana': 'SOL',
+        'usd': 'USD',
+        'eur': 'EUR',
+        'gbp': 'GBP',
+        'jpy': 'JPY'
+    };
+    return symbols[currency] || currency.toUpperCase();
+}
+
+// Format amount for display
+function formatAmount(amount) {
+    if (amount >= 1) {
+        return amount.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    } else {
+        return amount.toFixed(8).replace(/\.?0+$/, '');
+    }
+}
+
+// Swap currencies
+function swapCurrencies() {
+    const fromCurrency = document.getElementById('fromCurrency');
+    const toCurrency = document.getElementById('toCurrency');
+    
+    const temp = fromCurrency.value;
+    fromCurrency.value = toCurrency.value;
+    toCurrency.value = temp;
+    
+    performConversion();
+}
+
+// Set conversion (for popular conversions)
+function setConversion(from, to, amount) {
+    document.getElementById('fromCurrency').value = from;
+    document.getElementById('toCurrency').value = to;
+    document.getElementById('fromAmount').value = amount;
+    performConversion();
+    
+    // Scroll to converter
+    document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

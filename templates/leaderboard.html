@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - CryptoDash{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Leaderboard Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-trophy text-warning me-2"></i>Crypto Leaderboard
+            </h1>
+            <p class="text-muted mb-0">Top performing cryptocurrencies by various metrics</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-warning" onclick="window.location.reload()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Sorting Options -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-2">Sort by Performance:</h6>
+                            <div class="btn-group flex-wrap" role="group">
+                                <a href="{{ url_for('leaderboard.leaderboard', sort='24h_change') }}" 
+                                   class="btn {% if sort_by == '24h_change' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    <i class="fas fa-chart-line me-1"></i>24h Gainers
+                                </a>
+                                <a href="{{ url_for('leaderboard.leaderboard', sort='7d_change') }}" 
+                                   class="btn {% if sort_by == '7d_change' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    <i class="fas fa-calendar-week me-1"></i>7d Gainers
+                                </a>
+                                <a href="{{ url_for('leaderboard.leaderboard', sort='volume') }}" 
+                                   class="btn {% if sort_by == 'volume' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    <i class="fas fa-chart-bar me-1"></i>Volume Leaders
+                                </a>
+                                <a href="{{ url_for('leaderboard.leaderboard') }}" 
+                                   class="btn {% if sort_by not in ['24h_change', '7d_change', 'volume'] %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                    <i class="fas fa-crown me-1"></i>Market Cap
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <span class="badge bg-secondary fs-6">
+                                Top {{ top_coins|length }} Cryptocurrencies
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Categories -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-dark border-success h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-arrow-up fa-2x text-success mb-2"></i>
+                    <h6 class="text-success">Biggest Gainers</h6>
+                    <p class="text-muted small mb-0">Top performing assets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-danger h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-arrow-down fa-2x text-danger mb-2"></i>
+                    <h6 class="text-danger">Biggest Losers</h6>
+                    <p class="text-muted small mb-0">Assets with largest drops</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-info h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-volume-up fa-2x text-info mb-2"></i>
+                    <h6 class="text-info">Volume Leaders</h6>
+                    <p class="text-muted small mb-0">Highest trading activity</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-warning h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-crown fa-2x text-warning mb-2"></i>
+                    <h6 class="text-warning">Market Leaders</h6>
+                    <p class="text-muted small mb-0">Largest market caps</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Table -->
+    {% if top_coins %}
+    <div class="card bg-dark border-secondary">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                {% if sort_by == '24h_change' %}
+                    <i class="fas fa-chart-line text-success me-2"></i>24 Hour Performance Leaders
+                {% elif sort_by == '7d_change' %}
+                    <i class="fas fa-calendar-week text-success me-2"></i>7 Day Performance Leaders
+                {% elif sort_by == 'volume' %}
+                    <i class="fas fa-chart-bar text-info me-2"></i>Volume Trading Leaders
+                {% else %}
+                    <i class="fas fa-crown text-warning me-2"></i>Market Cap Leaders
+                {% endif %}
+            </h5>
+            <small class="text-muted">
+                <i class="fas fa-clock me-1"></i>Real-time data
+            </small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Rank</th>
+                            <th>Cryptocurrency</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">1h</th>
+                            <th class="text-end">24h</th>
+                            <th class="text-end">7d</th>
+                            <th class="text-end">Market Cap</th>
+                            <th class="text-end">Volume (24h)</th>
+                            <th class="text-end">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coin in top_coins %}
+                        <tr>
+                            <td class="text-center">
+                                {% if loop.index <= 3 %}
+                                <div class="position-relative">
+                                    {% if loop.index == 1 %}
+                                    <i class="fas fa-trophy text-warning fa-lg"></i>
+                                    {% elif loop.index == 2 %}
+                                    <i class="fas fa-medal text-secondary fa-lg"></i>
+                                    {% elif loop.index == 3 %}
+                                    <i class="fas fa-award text-warning fa-lg" style="color: #cd7f32 !important;"></i>
+                                    {% endif %}
+                                    <span class="position-absolute top-50 start-50 translate-middle text-dark fw-bold small">{{ loop.index }}</span>
+                                </div>
+                                {% else %}
+                                <span class="fw-bold">{{ loop.index }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ coin.image }}" alt="{{ coin.name }}" 
+                                         class="rounded-circle me-3" width="32" height="32">
+                                    <div>
+                                        <div class="fw-medium">{{ coin.name }}</div>
+                                        <small class="text-muted">{{ coin.symbol.upper() }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end fw-medium">
+                                {% if coin.current_price %}
+                                ${{ "%.2f" if coin.current_price >= 1 else "%.6f" | format(coin.current_price) }}
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.price_change_percentage_1h_in_currency %}
+                                <span class="badge {% if coin.price_change_percentage_1h_in_currency > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if coin.price_change_percentage_1h_in_currency > 0 %}+{% endif %}{{ "%.2f"|format(coin.price_change_percentage_1h_in_currency) }}%
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.price_change_percentage_24h %}
+                                <span class="badge {% if coin.price_change_percentage_24h > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if coin.price_change_percentage_24h > 0 %}+{% endif %}{{ "%.2f"|format(coin.price_change_percentage_24h) }}%
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.price_change_percentage_7d_in_currency %}
+                                <span class="badge {% if coin.price_change_percentage_7d_in_currency > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if coin.price_change_percentage_7d_in_currency > 0 %}+{% endif %}{{ "%.2f"|format(coin.price_change_percentage_7d_in_currency) }}%
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.market_cap %}
+                                ${{ "{:,.0f}".format(coin.market_cap) }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if coin.total_volume %}
+                                ${{ "{:,.0f}".format(coin.total_volume) }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% set performance_score = 0 %}
+                                {% if sort_by == '24h_change' and coin.price_change_percentage_24h %}
+                                    {% set performance_score = coin.price_change_percentage_24h %}
+                                {% elif sort_by == '7d_change' and coin.price_change_percentage_7d_in_currency %}
+                                    {% set performance_score = coin.price_change_percentage_7d_in_currency %}
+                                {% elif sort_by == 'volume' and coin.total_volume %}
+                                    {% set performance_score = (coin.total_volume / 1000000000) %}
+                                {% elif coin.market_cap %}
+                                    {% set performance_score = (coin.market_cap / 1000000000) %}
+                                {% endif %}
+                                
+                                {% if sort_by in ['24h_change', '7d_change'] %}
+                                <span class="badge {% if performance_score > 0 %}bg-success{% else %}bg-danger{% endif %} fs-6">
+                                    {% if performance_score > 0 %}+{% endif %}{{ "%.1f"|format(performance_score) }}%
+                                </span>
+                                {% elif sort_by == 'volume' %}
+                                <span class="badge bg-info fs-6">
+                                    ${{ "%.1f"|format(performance_score) }}B
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark fs-6">
+                                    ${{ "%.1f"|format(performance_score) }}B
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Insights -->
+    <div class="row mt-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <h6 class="card-title text-warning">
+                        <i class="fas fa-lightbulb me-2"></i>Performance Insights
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% if top_coins %}
+                            <h6 class="text-success">Today's Winner</h6>
+                            <p class="text-muted">
+                                <strong>{{ top_coins[0].name }}</strong> leads 
+                                {% if sort_by == '24h_change' %}with {{ "%.2f"|format(top_coins[0].price_change_percentage_24h or 0) }}% gain
+                                {% elif sort_by == '7d_change' %}with {{ "%.2f"|format(top_coins[0].price_change_percentage_7d_in_currency or 0) }}% weekly gain
+                                {% elif sort_by == 'volume' %}with ${{ "{:,.0f}".format(top_coins[0].total_volume or 0) }} trading volume
+                                {% else %}with ${{ "{:,.0f}".format(top_coins[0].market_cap or 0) }} market cap{% endif %}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info">Market Activity</h6>
+                            <p class="text-muted">
+                                {% if sort_by == 'volume' %}High volume indicates strong interest and liquidity
+                                {% elif sort_by in ['24h_change', '7d_change'] %}Strong performance shows positive momentum
+                                {% else %}Market cap represents total value and adoption{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No Data Available -->
+    <div class="text-center py-5">
+        <i class="fas fa-trophy fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Leaderboard Unavailable</h4>
+        <p class="text-muted">
+            Unable to load cryptocurrency performance data.<br>
+            Please check your connection and try again.
+        </p>
+        <button class="btn btn-warning" onclick="window.location.reload()">
+            <i class="fas fa-refresh me-2"></i>Retry
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Additional Stats -->
+    <div class="row mt-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <h6 class="card-title text-warning">
+                        <i class="fas fa-chart-pie me-2"></i>Leaderboard Categories
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="text-center p-3 bg-secondary rounded">
+                                <i class="fas fa-rocket fa-2x text-success mb-2"></i>
+                                <h6 class="mb-1">Price Gainers</h6>
+                                <small class="text-muted">Assets with highest price appreciation</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="text-center p-3 bg-secondary rounded">
+                                <i class="fas fa-chart-bar fa-2x text-info mb-2"></i>
+                                <h6 class="mb-1">Volume Leaders</h6>
+                                <small class="text-muted">Most actively traded cryptocurrencies</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="text-center p-3 bg-secondary rounded">
+                                <i class="fas fa-gem fa-2x text-warning mb-2"></i>
+                                <h6 class="mb-1">Market Cap</h6>
+                                <small class="text-muted">Largest cryptocurrencies by valuation</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="text-center p-3 bg-secondary rounded">
+                                <i class="fas fa-trend-up fa-2x text-primary mb-2"></i>
+                                <h6 class="mb-1">Momentum</h6>
+                                <small class="text-muted">Consistent performers over time</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

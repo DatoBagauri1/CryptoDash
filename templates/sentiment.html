@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Market Sentiment - CryptoDash{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Sentiment Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-thermometer-half text-warning me-2"></i>Market Sentiment
+            </h1>
+            <p class="text-muted mb-0">Fear & Greed Index and market psychology indicators</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-warning" onclick="window.location.reload()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Fear & Greed Index -->
+    {% if fear_greed %}
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header text-center">
+                    <h4 class="mb-0">Crypto Fear & Greed Index</h4>
+                    <p class="text-muted mb-0">Market sentiment indicator (0 = Extreme Fear, 100 = Extreme Greed)</p>
+                </div>
+                <div class="card-body text-center">
+                    <!-- Fear & Greed Gauge -->
+                    <div class="mb-4">
+                        <canvas id="fearGreedGauge" width="300" height="200"></canvas>
+                    </div>
+                    
+                    <!-- Current Value -->
+                    <div class="mb-4">
+                        <h1 class="display-3 fw-bold text-warning">{{ fear_greed.value }}</h1>
+                        <h3 class="badge 
+                            {% if fear_greed.value|int <= 25 %}bg-danger
+                            {% elif fear_greed.value|int <= 45 %}bg-warning text-dark
+                            {% elif fear_greed.value|int <= 55 %}bg-secondary
+                            {% elif fear_greed.value|int <= 75 %}bg-success
+                            {% else %}bg-success{% endif %} fs-4 px-4 py-2">
+                            {{ fear_greed.value_classification }}
+                        </h3>
+                    </div>
+                    
+                    <!-- Last Updated -->
+                    {% if fear_greed.timestamp %}
+                    <p class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Last updated: {{ fear_greed.timestamp }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sentiment Explanation -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0">Understanding Market Sentiment</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-danger">Fear Indicators (0-49)</h6>
+                            <ul class="list-unstyled text-muted">
+                                <li><span class="badge bg-danger me-2">0-25</span>Extreme Fear - Great buying opportunities</li>
+                                <li><span class="badge bg-warning text-dark me-2">26-49</span>Fear - Market is oversold</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">Greed Indicators (51-100)</h6>
+                            <ul class="list-unstyled text-muted">
+                                <li><span class="badge bg-success me-2">51-75</span>Greed - Market is getting overvalued</li>
+                                <li><span class="badge bg-success me-2">76-100</span>Extreme Greed - Time to be cautious</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h6 class="text-secondary">Neutral Zone</h6>
+                            <p class="text-muted"><span class="badge bg-secondary me-2">50</span>Neutral - Balanced market sentiment</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No Sentiment Data -->
+    <div class="text-center py-5">
+        <i class="fas fa-thermometer-half fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Sentiment Data Unavailable</h4>
+        <p class="text-muted">
+            Unable to load market sentiment data at the moment.<br>
+            Please try again later.
+        </p>
+        <button class="btn btn-warning" onclick="window.location.reload()">
+            <i class="fas fa-refresh me-2"></i>Try Again
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Market Sentiment Factors -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie text-info me-2"></i>
+                        What Influences Market Sentiment?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-chart-line fa-2x text-warning mb-3"></i>
+                                <h6>Price Volatility</h6>
+                                <p class="text-muted small">High volatility often indicates fear, while low volatility suggests confidence.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-volume-up fa-2x text-info mb-3"></i>
+                                <h6>Trading Volume</h6>
+                                <p class="text-muted small">Increased volume during price drops signals fear, during rallies suggests greed.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-hashtag fa-2x text-success mb-3"></i>
+                                <h6>Social Media</h6>
+                                <p class="text-muted small">Social sentiment analysis from Twitter, Reddit, and other platforms.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-search fa-2x text-danger mb-3"></i>
+                                <h6>Search Trends</h6>
+                                <p class="text-muted small">Google search trends for crypto-related terms and safe haven assets.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-poll fa-2x text-primary mb-3"></i>
+                                <h6>Surveys & Polls</h6>
+                                <p class="text-muted small">Investor sentiment surveys and market polls.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-coins fa-2x text-warning mb-3"></i>
+                                <h6>Market Dominance</h6>
+                                <p class="text-muted small">Bitcoin dominance and altcoin performance relative to BTC.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historical Context -->
+    <div class="row">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history text-secondary me-2"></i>
+                        Using Sentiment as a Trading Indicator
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">Contrarian Strategy</h6>
+                            <ul class="list-unstyled text-muted">
+                                <li><i class="fas fa-arrow-up me-2 text-success"></i>Buy when others are fearful (0-25)</li>
+                                <li><i class="fas fa-arrow-down me-2 text-danger"></i>Sell when others are greedy (75-100)</li>
+                                <li><i class="fas fa-balance-scale me-2 text-warning"></i>Hold during neutral periods (45-55)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info">Important Notes</h6>
+                            <ul class="list-unstyled text-muted">
+                                <li><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Sentiment is just one indicator</li>
+                                <li><i class="fas fa-chart-line me-2 text-info"></i>Combine with technical analysis</li>
+                                <li><i class="fas fa-calendar me-2 text-primary"></i>Consider long-term trends</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if fear_greed %}
+<script>
+// Fear & Greed Gauge Chart
+const canvas = document.getElementById('fearGreedGauge');
+const ctx = canvas.getContext('2d');
+
+const centerX = canvas.width / 2;
+const centerY = canvas.height - 30;
+const radius = 120;
+const value = {{ fear_greed.value }};
+
+// Draw gauge background
+ctx.beginPath();
+ctx.arc(centerX, centerY, radius, Math.PI, 0);
+ctx.lineWidth = 20;
+ctx.strokeStyle = '#444';
+ctx.stroke();
+
+// Draw gauge segments
+const segments = [
+    { start: 0, end: 25, color: '#dc3545' },    // Extreme Fear
+    { start: 25, end: 45, color: '#fd7e14' },   // Fear
+    { start: 45, end: 55, color: '#6c757d' },   // Neutral
+    { start: 55, end: 75, color: '#20c997' },   // Greed
+    { start: 75, end: 100, color: '#28a745' }   // Extreme Greed
+];
+
+segments.forEach(segment => {
+    const startAngle = Math.PI + (segment.start / 100) * Math.PI;
+    const endAngle = Math.PI + (segment.end / 100) * Math.PI;
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.lineWidth = 20;
+    ctx.strokeStyle = segment.color;
+    ctx.stroke();
+});
+
+// Draw needle
+const needleAngle = Math.PI + (value / 100) * Math.PI;
+const needleX = centerX + Math.cos(needleAngle) * (radius - 10);
+const needleY = centerY + Math.sin(needleAngle) * (radius - 10);
+
+ctx.beginPath();
+ctx.moveTo(centerX, centerY);
+ctx.lineTo(needleX, needleY);
+ctx.lineWidth = 4;
+ctx.strokeStyle = '#ffc107';
+ctx.stroke();
+
+// Draw center circle
+ctx.beginPath();
+ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
+ctx.fillStyle = '#ffc107';
+ctx.fill();
+
+// Draw labels
+ctx.fillStyle = '#ffffff';
+ctx.font = '14px Arial';
+ctx.textAlign = 'left';
+ctx.fillText('Fear', 50, centerY + 20);
+ctx.textAlign = 'right';
+ctx.fillText('Greed', canvas.width - 50, centerY + 20);
+ctx.textAlign = 'center';
+ctx.fillText('Neutral', centerX, centerY + 40);
+</script>
+{% endif %}
+{% endblock %}

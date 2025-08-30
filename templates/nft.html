@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}NFT Gallery - CryptoDash{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- NFT Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-image text-warning me-2"></i>NFT Gallery
+            </h1>
+            <p class="text-muted mb-0">View NFTs from any wallet address</p>
+        </div>
+    </div>
+
+    <!-- Wallet Address Input -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <form action="{{ url_for('nft.view_nfts') }}" method="GET">
+                        <div class="row align-items-end">
+                            <div class="col-md-8">
+                                <label for="wallet" class="form-label">Wallet Address</label>
+                                <input type="text" class="form-control bg-dark border-secondary" 
+                                       id="wallet" name="wallet" 
+                                       placeholder="Enter Ethereum wallet address (0x...)"
+                                       value="{{ wallet_address or '' }}">
+                                <div class="form-text text-muted">
+                                    Enter a valid Ethereum wallet address to view owned NFTs
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="fas fa-search me-2"></i>View NFTs
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sample Addresses for Demo -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <h6 class="card-title">Sample Addresses to Try:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Popular collector addresses:</small>
+                            <code class="small">0x2de2ba6c3a99c7e0b7f07de6cf85d1c63068b267</code><br>
+                            <code class="small">0x54be3a794282c030b15e43ae2bb182e14c409c5e</code>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Creator/Artist addresses:</small>
+                            <code class="small">0xc6b0562605d35ee710138402b878ffe6f2e23807</code><br>
+                            <code class="small">0x3b3ee1931dc30c1957379fac9aba94d1c48a5405</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NFT Results -->
+    {% if wallet_address %}
+        {% if nfts %}
+        <div class="row mb-3">
+            <div class="col">
+                <h4>NFTs owned by {{ wallet_address[:10] }}...{{ wallet_address[-8:] }}</h4>
+                <p class="text-muted">Found {{ nfts|length }} NFTs</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            {% for nft in nfts %}
+            <div class="col-md-6 col-lg-4 col-xl-3">
+                <div class="card bg-dark border-secondary h-100">
+                    {% if nft.image_url %}
+                    <img src="{{ nft.image_url }}" class="card-img-top" alt="{{ nft.name or 'NFT' }}" 
+                         style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" 
+                         style="height: 200px;">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">{{ nft.name or 'Unnamed NFT' }}</h6>
+                        
+                        {% if nft.collection and nft.collection.name %}
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-folder me-1"></i>{{ nft.collection.name }}
+                            </small>
+                        </p>
+                        {% endif %}
+                        
+                        {% if nft.description %}
+                        <p class="card-text text-muted small flex-grow-1">
+                            {{ nft.description[:100] }}{% if nft.description|length > 100 %}...{% endif %}
+                        </p>
+                        {% endif %}
+                        
+                        <div class="mt-auto">
+                            {% if nft.last_sale and nft.last_sale.total_price %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">Last Sale:</small>
+                                <span class="badge bg-success">
+                                    {{ "%.4f"|format(nft.last_sale.total_price|float / 1000000000000000000) }} ETH
+                                </span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if nft.token_id %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">Token ID:</small>
+                                <small class="font-monospace">#{{ nft.token_id }}</small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if nft.permalink %}
+                            <a href="{{ nft.permalink }}" target="_blank" class="btn btn-outline-warning btn-sm w-100">
+                                <i class="fas fa-external-link-alt me-1"></i>View on OpenSea
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-image fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">No NFTs Found</h4>
+            <p class="text-muted">
+                This wallet address doesn't own any NFTs, or they couldn't be loaded.<br>
+                Make sure the address is correct and try again.
+            </p>
+            <small class="text-muted">
+                Note: Due to API limitations, some NFTs may not be displayed.
+            </small>
+        </div>
+        {% endif %}
+    {% else %}
+    <!-- Welcome Message -->
+    <div class="text-center py-5">
+        <i class="fas fa-image fa-4x text-warning mb-4"></i>
+        <h3>Discover NFT Collections</h3>
+        <p class="text-muted mb-4">
+            Enter any Ethereum wallet address to view the NFTs owned by that wallet.<br>
+            Explore popular collections, discover new artists, and track NFT ownership.
+        </p>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Features:</h5>
+                        <ul class="list-unstyled text-start">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                View all NFTs owned by any wallet
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Collection information and metadata
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Last sale prices and token IDs
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Direct links to OpenSea listings
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

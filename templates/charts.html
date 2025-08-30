@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Price Charts - CryptoDash{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Charts Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-chart-area text-warning me-2"></i>Price Charts
+            </h1>
+            <p class="text-muted mb-0">Historical price analysis and market trends</p>
+        </div>
+    </div>
+
+    <!-- Chart Controls -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('charts.charts') }}">
+                        <div class="row align-items-end">
+                            <div class="col-md-4">
+                                <label for="coin" class="form-label">Cryptocurrency</label>
+                                <select class="form-select bg-dark border-secondary" id="coin" name="coin">
+                                    <option value="bitcoin" {% if coin_id == 'bitcoin' %}selected{% endif %}>Bitcoin (BTC)</option>
+                                    <option value="ethereum" {% if coin_id == 'ethereum' %}selected{% endif %}>Ethereum (ETH)</option>
+                                    <option value="binancecoin" {% if coin_id == 'binancecoin' %}selected{% endif %}>BNB (BNB)</option>
+                                    <option value="cardano" {% if coin_id == 'cardano' %}selected{% endif %}>Cardano (ADA)</option>
+                                    <option value="solana" {% if coin_id == 'solana' %}selected{% endif %}>Solana (SOL)</option>
+                                    <option value="polkadot" {% if coin_id == 'polkadot' %}selected{% endif %}>Polkadot (DOT)</option>
+                                    <option value="chainlink" {% if coin_id == 'chainlink' %}selected{% endif %}>Chainlink (LINK)</option>
+                                    <option value="litecoin" {% if coin_id == 'litecoin' %}selected{% endif %}>Litecoin (LTC)</option>
+                                    <option value="polygon" {% if coin_id == 'polygon' %}selected{% endif %}>Polygon (MATIC)</option>
+                                    <option value="avalanche-2" {% if coin_id == 'avalanche-2' %}selected{% endif %}>Avalanche (AVAX)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="days" class="form-label">Time Period</label>
+                                <select class="form-select bg-dark border-secondary" id="days" name="days">
+                                    <option value="1" {% if days == 1 %}selected{% endif %}>24 Hours</option>
+                                    <option value="7" {% if days == 7 %}selected{% endif %}>7 Days</option>
+                                    <option value="30" {% if days == 30 %}selected{% endif %}>30 Days</option>
+                                    <option value="90" {% if days == 90 %}selected{% endif %}>90 Days</option>
+                                    <option value="365" {% if days == 365 %}selected{% endif %}>1 Year</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="fas fa-chart-line me-2"></i>Update Chart
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Price Info -->
+    {% if coin_info %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h5 class="mb-1">{{ coin_id.title() }}</h5>
+                            <h3 class="text-warning mb-0">${{ "%.2f" if coin_info.usd >= 1 else "%.6f" | format(coin_info.usd) }}</h3>
+                        </div>
+                        {% if coin_info.usd_24h_change %}
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1">24h Change</p>
+                            <h5 class="mb-0">
+                                <span class="badge {% if coin_info.usd_24h_change > 0 %}bg-success{% else %}bg-danger{% endif %} fs-6">
+                                    {% if coin_info.usd_24h_change > 0 %}+{% endif %}{{ "%.2f"|format(coin_info.usd_24h_change) }}%
+                                </span>
+                            </h5>
+                        </div>
+                        {% endif %}
+                        {% if coin_info.usd_market_cap %}
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1">Market Cap</p>
+                            <h6 class="mb-0">${{ "{:,.0f}".format(coin_info.usd_market_cap) }}</h6>
+                        </div>
+                        {% endif %}
+                        {% if coin_info.usd_24h_vol %}
+                        <div class="col-md-3">
+                            <p class="text-muted mb-1">24h Volume</p>
+                            <h6 class="mb-0">${{ "{:,.0f}".format(coin_info.usd_24h_vol) }}</h6>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Price Chart -->
+    {% if historical_data and historical_data.prices %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0">Price History - {{ coin_id.title() }} ({{ days }} days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="priceChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Volume Chart -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0">Trading Volume - {{ coin_id.title() }} ({{ days }} days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="volumeChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Market Cap Chart -->
+    {% if historical_data.market_caps %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0">Market Cap - {{ coin_id.title() }} ({{ days }} days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="marketCapChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- No Chart Data -->
+    <div class="text-center py-5">
+        <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Chart Data Unavailable</h4>
+        <p class="text-muted">
+            Unable to load historical price data for this cryptocurrency.<br>
+            Please try a different coin or time period.
+        </p>
+        <button class="btn btn-warning" onclick="window.location.reload()">
+            <i class="fas fa-refresh me-2"></i>Retry
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Chart Analysis Info -->
+    <div class="row">
+        <div class="col">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <h6 class="card-title text-warning">
+                        <i class="fas fa-info-circle me-2"></i>Chart Analysis Features
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled text-muted">
+                                <li><i class="fas fa-check me-2 text-success"></i>Real-time price data</li>
+                                <li><i class="fas fa-check me-2 text-success"></i>Multiple time periods</li>
+                                <li><i class="fas fa-check me-2 text-success"></i>Volume analysis</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled text-muted">
+                                <li><i class="fas fa-check me-2 text-success"></i>Market cap tracking</li>
+                                <li><i class="fas fa-check me-2 text-success"></i>Interactive charts</li>
+                                <li><i class="fas fa-check me-2 text-success"></i>Historical data</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if historical_data and historical_data.prices %}
+<script>
+// Prepare data for charts
+const priceData = {{ historical_data.prices | tojson }};
+const volumeData = {{ historical_data.total_volumes | tojson }};
+{% if historical_data.market_caps %}
+const marketCapData = {{ historical_data.market_caps | tojson }};
+{% endif %}
+
+// Format data for Chart.js
+const formatData = (data) => {
+    return data.map(item => ({
+        x: new Date(item[0]),
+        y: item[1]
+    }));
+};
+
+const priceChartData = formatData(priceData);
+const volumeChartData = formatData(volumeData);
+{% if historical_data.market_caps %}
+const marketCapChartData = formatData(marketCapData);
+{% endif %}
+
+// Chart.js configuration
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+        x: {
+            type: 'time',
+            time: {
+                displayFormats: {
+                    day: 'MMM DD',
+                    hour: 'HH:mm'
+                }
+            },
+            grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+                color: '#6c757d'
+            }
+        },
+        y: {
+            grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+                color: '#6c757d',
+                callback: function(value) {
+                    return '$' + value.toLocaleString();
+                }
+            }
+        }
+    },
+    plugins: {
+        legend: {
+            display: false
+        },
+        tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: '#ffffff',
+            bodyColor: '#ffffff',
+            borderColor: '#ffc107',
+            borderWidth: 1
+        }
+    }
+};
+
+// Price Chart
+const priceCtx = document.getElementById('priceChart').getContext('2d');
+new Chart(priceCtx, {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: 'Price (USD)',
+            data: priceChartData,
+            borderColor: '#ffc107',
+            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+            fill: true,
+            tension: 0.1
+        }]
+    },
+    options: chartOptions
+});
+
+// Volume Chart
+const volumeCtx = document.getElementById('volumeChart').getContext('2d');
+new Chart(volumeCtx, {
+    type: 'bar',
+    data: {
+        datasets: [{
+            label: 'Volume (USD)',
+            data: volumeChartData,
+            backgroundColor: 'rgba(0, 123, 255, 0.6)',
+            borderColor: '#007bff',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        ...chartOptions,
+        scales: {
+            ...chartOptions.scales,
+            y: {
+                ...chartOptions.scales.y,
+                ticks: {
+                    ...chartOptions.scales.y.ticks,
+                    callback: function(value) {
+                        return '$' + (value / 1000000).toFixed(1) + 'M';
+                    }
+                }
+            }
+        }
+    }
+});
+
+{% if historical_data.market_caps %}
+// Market Cap Chart
+const marketCapCtx = document.getElementById('marketCapChart').getContext('2d');
+new Chart(marketCapCtx, {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: 'Market Cap (USD)',
+            data: marketCapChartData,
+            borderColor: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            fill: true,
+            tension: 0.1
+        }]
+    },
+    options: {
+        ...chartOptions,
+        scales: {
+            ...chartOptions.scales,
+            y: {
+                ...chartOptions.scales.y,
+                ticks: {
+                    ...chartOptions.scales.y.ticks,
+                    callback: function(value) {
+                        return '$' + (value / 1000000000).toFixed(1) + 'B';
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endif %}
+{% endblock %}
