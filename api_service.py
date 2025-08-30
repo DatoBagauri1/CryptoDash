@@ -50,10 +50,22 @@ class CryptoAPIService:
 
     # ----------- CoinGecko Methods -----------
     def get_trending_coins(self) -> List[Dict]:
+        cache_key = "trending_coins"
+        cached = self._get_cache(cache_key)
+        if cached:
+            return cached
+
         data = self._safe_request(f"{self.coingecko_base_url}/search/trending")
-        return data.get('coins', [])
+        coins = data.get('coins', [])
+        self._set_cache(cache_key, coins)
+        return coins
 
     def get_coin_prices(self, coin_ids: List[str], vs_currency: str = 'usd') -> Dict:
+        cache_key = f"coin_prices_{'_'.join(coin_ids)}_{vs_currency}"
+        cached = self._get_cache(cache_key)
+        if cached:
+            return cached
+
         ids_str = ','.join(coin_ids)
         params = {
             'ids': ids_str,
@@ -62,9 +74,16 @@ class CryptoAPIService:
             'include_market_cap': 'true',
             'include_24hr_vol': 'true'
         }
-        return self._safe_request(f"{self.coingecko_base_url}/simple/price", params=params) or {}
+        data = self._safe_request(f"{self.coingecko_base_url}/simple/price", params=params) or {}
+        self._set_cache(cache_key, data)
+        return data
 
     def get_top_coins(self, limit: int = 100, page: int = 1) -> List[Dict]:
+        cache_key = f"top_coins_{limit}_{page}"
+        cached = self._get_cache(cache_key)
+        if cached:
+            return cached
+
         params = {
             'vs_currency': 'usd',
             'order': 'market_cap_desc',
@@ -73,10 +92,19 @@ class CryptoAPIService:
             'sparkline': 'false',
             'price_change_percentage': '24h,7d'
         }
-        return self._safe_request(f"{self.coingecko_base_url}/coins/markets", params=params) or []
+        data = self._safe_request(f"{self.coingecko_base_url}/coins/markets", params=params) or []
+        self._set_cache(cache_key, data)
+        return data
 
     def search_coins(self, query: str) -> Dict:
-        return self._safe_request(f"{self.coingecko_base_url}/search", params={'query': query}) or {}
+        cache_key = f"search_coins_{query}"
+        cached = self._get_cache(cache_key)
+        if cached:
+            return cached
+
+        data = self._safe_request(f"{self.coingecko_base_url}/search", params={'query': query}) or {}
+        self._set_cache(cache_key, data)
+        return data
 
     # ----------- Charts (Coin History) using CryptoCompare -----------
     def get_coin_history(self, coin_symbol: str, days: int = 30) -> Dict:
@@ -112,10 +140,7 @@ class CryptoAPIService:
         if cached:
             return cached
 
-        crypto_prices = self._safe_request(
-            f"{self.coingecko_base_url}/simple/price",
-            params={"ids": "bitcoin,ethereum,binancecoin,cardano,solana", "vs_currencies": "usd"}
-        ) or {}
+        crypto_prices = self.get_coin_prices(["bitcoin", "ethereum", "binancecoin", "cardano", "solana"], "usd")
 
         fiat_data = self._safe_request("https://api.exchangerate.host/latest?base=USD") or {}
         rates = fiat_data.get("rates", {})
@@ -132,9 +157,6 @@ class CryptoAPIService:
                 "gbp": round(usd * rates.get("GBP", 1), 4),
                 "jpy": round(usd * rates.get("JPY", 1), 2),
             }
-
-        if not result:
-            logger.warning("Unable to get conversion rate. Please try again.")
 
         self._set_cache(cache_key, result)
         return result
@@ -158,6 +180,11 @@ class CryptoAPIService:
         return data.get("results", [])
 
     def get_crypto_news(self, limit: int = 20) -> List[Dict]:
+        cache_key = f"crypto_news_{limit}"
+        cached = self._get_cache(cache_key)
+        if cached:
+            return cached
+
         rss_urls = [
             'https://feeds.feedburner.com/coindesk/CoinDesk',
             'https://cointelegraph.com/rss',
@@ -186,11 +213,19 @@ class CryptoAPIService:
                     all_articles.append(article)
             except Exception as e:
                 logger.warning(f"Error parsing RSS {rss_url}: {e}")
+        self._set_cache(cache_key, all_articles)
         return all_articles[:limit]
 
     def get_fear_greed_index(self) -> Dict:
+        cache_key = "fear_greed"
+        cached = self._get_cache(cache_key)
+        if cached:
+            return cached
+
         data = self._safe_request(self.fear_greed_url)
-        return data.get('data', [{}])[0] if data.get('data') else {}
+        result = data.get('data', [{}])[0] if data.get('data') else {}
+        self._set_cache(cache_key, result)
+        return result
 
 # Global instance
 crypto_api = CryptoAPIService()
