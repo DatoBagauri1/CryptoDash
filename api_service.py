@@ -17,7 +17,7 @@ class CryptoAPIService:
         self.opensea_api_key = os.getenv("OPENSEA_API_KEY", "")
         self.fear_greed_url = "https://api.alternative.me/fng"
 
-        # ----- Cache for charts and converter -----
+        # ----- Cache for endpoints -----
         self._cache = {}
         self._cache_expiry = 300  # 5 minutes
 
@@ -55,7 +55,7 @@ class CryptoAPIService:
         if cached:
             return cached
 
-        data = self._safe_request(f"{self.coingecko_base_url}/search/trending")
+        data = self._safe_request(f"{self.coingecko_base_url}/search/trending") or {}
         coins = data.get('coins', [])
         self._set_cache(cache_key, coins)
         return coins
@@ -106,7 +106,7 @@ class CryptoAPIService:
         self._set_cache(cache_key, data)
         return data
 
-    # ----------- Charts (Coin History) using CryptoCompare -----------
+    # ----------- Charts (Coin History) -----------
     def get_coin_history(self, coin_symbol: str, days: int = 30) -> Dict:
         cache_key = f"history_{coin_symbol}_{days}"
         cached = self._get_cache(cache_key)
@@ -124,8 +124,6 @@ class CryptoAPIService:
                 prices.append([ts, item.get("close", 0)])
                 market_caps.append([ts, item.get("volumefrom", 0) * item.get("close", 0)])
                 total_volumes.append([ts, item.get("volumeto", 0)])
-            if not prices:
-                logger.warning(f"No historical data found for {coin_symbol}")
         except Exception as e:
             logger.error(f"Error processing historical data for {coin_symbol}: {e}")
 
@@ -133,7 +131,7 @@ class CryptoAPIService:
         self._set_cache(cache_key, result)
         return result
 
-    # ----------- Converter (Exchange Rates) using ExchangeRate Host -----------
+    # ----------- Converter (Exchange Rates) -----------
     def get_exchange_rates(self) -> Dict:
         cache_key = "exchange_rates"
         cached = self._get_cache(cache_key)
@@ -141,7 +139,6 @@ class CryptoAPIService:
             return cached
 
         crypto_prices = self.get_coin_prices(["bitcoin", "ethereum", "binancecoin", "cardano", "solana"], "usd")
-
         fiat_data = self._safe_request("https://api.exchangerate.host/latest?base=USD") or {}
         rates = fiat_data.get("rates", {})
 
@@ -161,7 +158,7 @@ class CryptoAPIService:
         self._set_cache(cache_key, result)
         return result
 
-    # ----------- Other Methods (unchanged) -----------
+    # ----------- Other Methods -----------
     def get_nfts_by_wallet(self, wallet_address: str, chain: str = "ethereum") -> List[Dict]:
         if not self.opensea_api_key:
             logger.warning("OpenSea API key missing. Set OPENSEA_API_KEY.")
